@@ -320,10 +320,24 @@ const Dashboard: React.FC = () => {
                     <p className="text-sm text-gray-500">
                       {formatFileSize(file.file_size)} • {formatDate(file.created_at)}
                     </p>
-                    {file.shared_with.length > 0 && (
-                      <p className="text-xs text-gray-400 mt-1">
-                        Shared with: {file.shared_with.join(', ')}
-                      </p>
+                     {file.shared_with.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {file.shared_with.map((username) => (
+                          <span
+                            key={username}
+                            className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full"
+                          >
+                            {username}
+                            <button
+                              onClick={() => handleRevoke(file.id, username)}
+                              className="text-red-500 hover:text-red-700 ml-1 focus:outline-none"
+                              title={`Revoke access for ${username}`}
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                   <div className="flex gap-2">
