@@ -18,22 +18,28 @@ const Register: React.FC = () => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error('Password tidak cocok');
       return;
     }
     
     if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+      toast.error('Password minimal 6 karakter');
       return;
     }
     
     setLoading(true);
     try {
       await register(username, email, password);
-      toast.success('Registration successful!');
+      toast.success('Registrasi berhasil!');
       navigate('/dashboard');
     } catch (error: any) {
-      const message = error.response?.data?.detail || 'Registration failed';
+      const detail = error.response?.data?.detail;
+      let message = 'Registrasi gagal';
+      if (detail === 'Username or email already exists') {
+        message = 'Username atau email sudah terdaftar';
+      } else if (detail) {
+        message = detail;
+      }
       toast.error(message);
     } finally {
       setLoading(false);
@@ -42,92 +48,80 @@ const Register: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-md w-full space-y-6">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create Account
+            Buat Akun
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Join SecureVault today
+            Gabung SecureVault sekarang
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Username
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                className="input-field"
-                placeholder="Choose a username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="input-field"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="input-field"
-                placeholder="At least 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                className="input-field"
-                placeholder="Confirm your password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-            </div>
-          </div>
-
+        <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
           <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full"
-            >
-              {loading ? 'Creating account...' : 'Sign up'}
-            </button>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Username
+            </label>
+            <input
+              type="text"
+              required
+              className="input-field"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              required
+              className="input-field"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              required
+              className="input-field"
+              placeholder="Minimal 6 karakter"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Konfirmasi Password
+            </label>
+            <input
+              type="password"
+              required
+              className="input-field"
+              placeholder="Konfirmasi password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
           </div>
 
-          <div className="text-center">
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full mt-4"
+          >
+            {loading ? 'Membuat akun...' : 'Register'}
+          </button>
+
+          <div className="text-center mt-3">
             <Link to="/login" className="text-primary-600 hover:text-primary-500">
-              Already have an account? Sign in
+              Sudah punya akun? Login
             </Link>
           </div>
         </form>

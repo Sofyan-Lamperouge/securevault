@@ -17,10 +17,16 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       await login(username, password);
-      toast.success('Login successful!');
+      toast.success('Login berhasil!');
       navigate('/dashboard');
     } catch (error: any) {
-      const message = error.response?.data?.detail || 'Login failed';
+      const detail = error.response?.data?.detail;
+      let message = 'Login gagal';
+      if (detail === 'Invalid credentials') {
+        message = 'Username atau password salah';
+      } else if (detail) {
+        message = detail;
+      }
       toast.error(message);
     } finally {
       setLoading(false);
@@ -29,62 +35,58 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-md w-full space-y-6">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             SecureVault
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to your account
+            Masuk ke akun Anda
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="username" className="sr-only">
-                Username
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                className="input-field rounded-t-md"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="input-field rounded-b-md"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          </div>
-
+        <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
           <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full"
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+              Username
+            </label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              required
+              className="input-field"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              className="input-field"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
 
-          <div className="text-center">
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full mt-4"
+          >
+            {loading ? 'Memproses...' : 'Login'}
+          </button>
+
+          <div className="text-center mt-3">
             <Link to="/register" className="text-primary-600 hover:text-primary-500">
-              Don't have an account? Register
+              Belum punya akun? Register
             </Link>
           </div>
         </form>

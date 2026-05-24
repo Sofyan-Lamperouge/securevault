@@ -10,7 +10,7 @@ import {
   downloadFile,
   deleteFile,
   shareFile,
-  shareFileMultiple, 
+  shareFileMultiple,
   revokeAccess,
   getSharedWithMe,
   getActivities,
@@ -50,7 +50,7 @@ const Dashboard: React.FC = () => {
       setSharedFiles(sharedRes.data);
       setActivities(activitiesRes.data);
     } catch (error) {
-      toast.error('Failed to load data');
+      toast.error('Gagal memuat data');
     } finally {
       setLoading(false);
     }
@@ -67,9 +67,9 @@ const Dashboard: React.FC = () => {
     for (const file of acceptedFiles) {
       try {
         await uploadFile(file);
-        toast.success(`Uploaded: ${file.name}`);
+        toast.success(`Berhasil diupload: ${file.name}`);
       } catch (error) {
-        toast.error(`Failed: ${file.name}`);
+        toast.error(`Gagal upload: ${file.name}`);
       }
     }
     setUploading(false);
@@ -79,7 +79,7 @@ const Dashboard: React.FC = () => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   const handleDownload = async (fileId: number, filename: string) => {
-    const password = prompt('Enter your password to decrypt this file:');
+    const password = prompt('Masukkan password Anda untuk mendekripsi file:');
     if (!password) return;
 
     try {
@@ -92,104 +92,117 @@ const Dashboard: React.FC = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success('File downloaded and decrypted successfully!');
+      toast.success('File berhasil didownload dan didekripsi!');
     } catch (error: any) {
-      const message = error.response?.data?.detail || 'Download failed';
+      const detail = error.response?.data?.detail;
+      let message = 'Gagal download';
+      if (detail === 'Invalid password') message = 'Password salah';
+      else if (detail === 'File not found') message = 'File tidak ditemukan';
+      else if (detail === 'Access denied') message = 'Akses ditolak';
+      else if (detail) message = detail;
       toast.error(message);
     }
   };
 
   const handleDelete = async (fileId: number, filename: string) => {
-    if (!window.confirm(`Delete "${filename}"? This cannot be undone.`)) return;
+    if (!window.confirm(`Hapus "${filename}"? Tindakan ini tidak dapat dibatalkan.`)) return;
     
     try {
       await deleteFile(fileId);
-      toast.success(`Deleted: ${filename}`);
+      toast.success(`Berhasil dihapus: ${filename}`);
       loadData();
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Delete failed');
+      const detail = error.response?.data?.detail;
+      let message = 'Gagal hapus';
+      if (detail === 'Only owner can delete this file') message = 'Hanya pemilik yang dapat menghapus file';
+      else if (detail) message = detail;
+      toast.error(message);
     }
   };
 
   const handleShare = async () => {
     if (!selectedFileId || !shareUsername || !sharePassword) {
-      toast.error('Please fill all fields');
+      toast.error('Harap isi semua field');
       return;
     }
 
     try {
       await shareFile(selectedFileId, shareUsername, sharePassword);
-      toast.success(`Shared with ${shareUsername}`);
+      toast.success(`Berhasil dibagikan ke ${shareUsername}`);
       setShowShareModal(false);
       setShareUsername('');
       setSharePassword('');
       loadData();
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Share failed');
+      const detail = error.response?.data?.detail;
+      let message = 'Gagal share';
+      if (detail === 'Target user not found') message = 'User target tidak ditemukan';
+      else if (detail === 'Cannot share with yourself') message = 'Tidak bisa share ke diri sendiri';
+      else if (detail === 'File already shared with this user') message = 'File sudah dishare ke user ini';
+      else if (detail === 'Invalid password') message = 'Password salah';
+      else if (detail) message = detail;
+      toast.error(message);
     }
   };
 
   const handleShareMultiple = async () => {
-  if (!selectedFileId || !shareMultipleUsernames || !shareMultiplePassword) {
-    toast.error('Please fill all fields');
-    return;
-  }
-
-  // Parse usernames (bisa dipisah dengan koma atau spasi)
-  const usernamesArray = shareMultipleUsernames
-    .split(/[ ,]+/)
-    .map(u => u.trim())
-    .filter(u => u.length > 0);
-
-  if (usernamesArray.length === 0) {
-    toast.error('Please enter at least one username');
-    return;
-  }
-
-  setShareMultipleLoading(true);
-  try {
-    const response = await shareFileMultiple(selectedFileId, usernamesArray, shareMultiplePassword);
-    
-    // Tampilkan hasil share multiple
-    const results = response.data.results;
-    const successCount = results.filter((r: any) => r.status === 'success').length;
-    const failCount = results.filter((r: any) => r.status === 'failed').length;
-    
-    if (failCount === 0) {
-      toast.success(`Shared with ${successCount} user(s)!`);
-    } else {
-      toast.success(`Shared with ${successCount} user(s), failed: ${failCount}`);
-      // Tampilkan detail kegagalan
-      results.filter((r: any) => r.status === 'failed').forEach((r: any) => {
-        toast.error(`${r.username}: ${r.reason}`);
-      });
+    if (!selectedFileId || !shareMultipleUsernames || !shareMultiplePassword) {
+      toast.error('Harap isi semua field');
+      return;
     }
-    
-    setShowShareMultipleModal(false);
-    setShareMultipleUsernames('');
-    setShareMultiplePassword('');
-    loadData();
-  } catch (error: any) {
-    toast.error(error.response?.data?.detail || 'Share failed');
-  } finally {
-    setShareMultipleLoading(false);
+
+    const usernamesArray = shareMultipleUsernames
+      .split(/[ ,]+/)
+      .map(u => u.trim())
+      .filter(u => u.length > 0);
+
+    if (usernamesArray.length === 0) {
+      toast.error('Masukkan minimal satu username');
+      return;
+    }
+
+    setShareMultipleLoading(true);
+    try {
+      const response = await shareFileMultiple(selectedFileId, usernamesArray, shareMultiplePassword);
+      const results = response.data.results;
+      const successCount = results.filter((r: any) => r.status === 'success').length;
+      const failCount = results.filter((r: any) => r.status === 'failed').length;
+      
+      if (failCount === 0) {
+        toast.success(`Berhasil dibagikan ke ${successCount} user!`);
+      } else {
+        toast.success(`Dibagikan ke ${successCount} user, gagal: ${failCount}`);
+        results.filter((r: any) => r.status === 'failed').forEach((r: any) => {
+          toast.error(`${r.username}: ${r.reason}`);
+        });
+      }
+      
+      setShowShareMultipleModal(false);
+      setShareMultipleUsernames('');
+      setShareMultiplePassword('');
+      loadData();
+    } catch (error: any) {
+      const detail = error.response?.data?.detail;
+      toast.error(detail || 'Gagal share multiple');
+    } finally {
+      setShareMultipleLoading(false);
     }
   };
 
   const handleRevoke = async (fileId: number, username: string) => {
-    if (!window.confirm(`Revoke access for ${username}?`)) return;
+    if (!window.confirm(`Cabut akses untuk ${username}?`)) return;
     
     try {
       await revokeAccess(fileId, username);
-      toast.success(`Access revoked for ${username}`);
+      toast.success(`Akses dicabut untuk ${username}`);
       loadData();
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Revoke failed');
+      toast.error(error.response?.data?.detail || 'Gagal cabut akses');
     }
   };
 
   const handlePreview = async (fileId: number, filename: string) => {
-    const password = prompt('Enter your password to preview this file:');
+    const password = prompt('Masukkan password Anda untuk preview file:');
     if (!password) return;
 
     setPreviewLoading(true);
@@ -201,7 +214,12 @@ const Dashboard: React.FC = () => {
       setPreviewUrl(url);
       setPreviewFilename(filename);
     } catch (error: any) {
-      const message = error.response?.data?.detail || 'Preview failed';
+      const detail = error.response?.data?.detail;
+      let message = 'Gagal preview';
+      if (detail === 'Invalid password') message = 'Password salah';
+      else if (detail === 'File not found') message = 'File tidak ditemukan';
+      else if (detail === 'Access denied') message = 'Akses ditolak';
+      else if (detail) message = detail;
       toast.error(message);
       setPreviewFileId(null);
     } finally {
@@ -227,13 +245,24 @@ const Dashboard: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+    return new Date(dateString).toLocaleString('id-ID');
+  };
+
+  const getActionText = (action: string) => {
+    switch (action) {
+      case 'UPLOAD': return 'UPLOAD';
+      case 'DOWNLOAD': return 'DOWNLOAD';
+      case 'SHARE': return 'SHARE';
+      case 'PREVIEW': return 'PREVIEW';
+      case 'REVOKE': return 'REVOKE';
+      default: return action;
+    }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-500">Loading your secure vault...</div>
+        <div className="text-gray-500">Memuat brankas aman Anda...</div>
       </div>
     );
   }
@@ -245,7 +274,7 @@ const Dashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary-600">🔐 SecureVault</h1>
           <div className="flex items-center gap-4">
-            <span className="text-gray-600">Welcome, {user?.username}</span>
+            <span className="text-gray-600">Selamat datang, {user?.username}</span>
             <button onClick={logout} className="btn-secondary">
               Logout
             </button>
@@ -263,11 +292,11 @@ const Dashboard: React.FC = () => {
         >
           <input {...getInputProps()} />
           {uploading ? (
-            <p className="text-gray-500">Uploading...</p>
+            <p className="text-gray-500">Mengupload...</p>
           ) : isDragActive ? (
-            <p className="text-primary-600">Drop your files here...</p>
+            <p className="text-primary-600">Lepas file di sini...</p>
           ) : (
-            <p className="text-gray-500">Drag & drop files here, or click to select</p>
+            <p className="text-gray-500">Drag & drop file di sini, atau klik untuk pilih</p>
           )}
         </div>
 
@@ -281,7 +310,7 @@ const Dashboard: React.FC = () => {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            My Files ({ownedFiles.length})
+            File Saya ({ownedFiles.length})
           </button>
           <button
             onClick={() => setActiveTab('shared')}
@@ -291,7 +320,7 @@ const Dashboard: React.FC = () => {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Shared With Me ({sharedFiles.length})
+            Dibagikan ke Saya ({sharedFiles.length})
           </button>
           <button
             onClick={() => setActiveTab('activities')}
@@ -301,7 +330,7 @@ const Dashboard: React.FC = () => {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Activity Log
+            Riwayat Aktivitas
           </button>
         </div>
 
@@ -310,7 +339,7 @@ const Dashboard: React.FC = () => {
           <div className="grid gap-4">
             {ownedFiles.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
-                No files yet. Upload your first file above!
+                Belum ada file. Upload file pertama Anda!
               </div>
             ) : (
               ownedFiles.map((file) => (
@@ -320,7 +349,7 @@ const Dashboard: React.FC = () => {
                     <p className="text-sm text-gray-500">
                       {formatFileSize(file.file_size)} • {formatDate(file.created_at)}
                     </p>
-                     {file.shared_with.length > 0 && (
+                    {file.shared_with.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {file.shared_with.map((username) => (
                           <span
@@ -331,7 +360,7 @@ const Dashboard: React.FC = () => {
                             <button
                               onClick={() => handleRevoke(file.id, username)}
                               className="text-red-500 hover:text-red-700 ml-1 focus:outline-none"
-                              title={`Revoke access for ${username}`}
+                              title={`Cabut akses untuk ${username}`}
                             >
                               ✕
                             </button>
@@ -352,7 +381,7 @@ const Dashboard: React.FC = () => {
                       className="btn-secondary text-sm py-1 px-3"
                       disabled={previewLoading}
                     >
-                      {previewLoading ? 'Loading...' : 'Preview'}
+                      {previewLoading ? 'Memuat...' : 'Preview'}
                     </button>
                     <button
                       onClick={() => {
@@ -390,7 +419,7 @@ const Dashboard: React.FC = () => {
           <div className="grid gap-4">
             {sharedFiles.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
-                No files shared with you yet.
+                Belum ada file yang dibagikan ke Anda.
               </div>
             ) : (
               sharedFiles.map((file) => (
@@ -398,7 +427,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-gray-900 truncate">{file.filename}</h3>
                     <p className="text-sm text-gray-500">
-                      From: {file.owner} • {formatFileSize(file.file_size)} • {formatDate(file.shared_at)}
+                      Dari: {file.owner} • {formatFileSize(file.file_size)} • {formatDate(file.shared_at)}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -427,10 +456,10 @@ const Dashboard: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">File</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Detail</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Waktu</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -444,7 +473,7 @@ const Dashboard: React.FC = () => {
                         activity.action === 'PREVIEW' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
-                        {activity.action}
+                        {getActionText(activity.action)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">{activity.filename || '-'}</td>
@@ -473,26 +502,14 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="flex-1 overflow-auto p-4">
               {previewFilename.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="max-w-full h-auto mx-auto"
-                />
+                <img src={previewUrl} alt="Preview" className="max-w-full h-auto mx-auto" />
               ) : previewFilename.match(/\.(txt|md)$/i) ? (
-                <iframe
-                  src={previewUrl}
-                  title="Preview"
-                  className="w-full h-[500px] border-0"
-                />
+                <iframe src={previewUrl} title="Preview" className="w-full h-[500px] border-0" />
               ) : previewFilename.match(/\.pdf$/i) ? (
-                <iframe
-                  src={previewUrl}
-                  title="Preview"
-                  className="w-full h-[500px] border-0"
-                />
+                <iframe src={previewUrl} title="Preview" className="w-full h-[500px] border-0" />
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">Preview not available for this file type.</p>
+                  <p className="text-gray-500">Preview tidak tersedia untuk tipe file ini.</p>
                   <button
                     onClick={() => {
                       closePreview();
@@ -502,7 +519,7 @@ const Dashboard: React.FC = () => {
                     }}
                     className="btn-primary mt-4"
                   >
-                    Download instead
+                    Download saja
                   </button>
                 </div>
               )}
@@ -519,24 +536,24 @@ const Dashboard: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Username to share with
+                  Username penerima
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="e.g., bob"
+                  placeholder="contoh: kurumi"
                   value={shareUsername}
                   onChange={(e) => setShareUsername(e.target.value)}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Your Password
+                  Password Anda
                 </label>
                 <input
                   type="password"
                   className="input-field"
-                  placeholder="Required to decrypt your private key"
+                  placeholder="Diperlukan untuk dekripsi private key"
                   value={sharePassword}
                   onChange={(e) => setSharePassword(e.target.value)}
                 />
@@ -553,7 +570,7 @@ const Dashboard: React.FC = () => {
                   }}
                   className="btn-secondary flex-1"
                 >
-                  Cancel
+                  Batal
                 </button>
               </div>
             </div>
@@ -561,46 +578,42 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-            {/* Share Multiple Modal */}
+      {/* Share Multiple Modal */}
       {showShareMultipleModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold mb-4">Share File to Multiple Users</h2>
+            <h2 className="text-xl font-bold mb-4">Share File ke Banyak User</h2>
             <p className="text-sm text-gray-500 mb-4">
-              Enter usernames separated by commas or spaces
+              Masukkan username dipisah koma atau spasi
             </p>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Usernames
+                  Username
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="e.g., tono, siti, budi"
+                  placeholder="contoh: kurumi, alice, bob"
                   value={shareMultipleUsernames}
                   onChange={(e) => setShareMultipleUsernames(e.target.value)}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Your Password
+                  Password Anda
                 </label>
                 <input
                   type="password"
                   className="input-field"
-                  placeholder="Required to decrypt your private key"
+                  placeholder="Diperlukan untuk dekripsi private key"
                   value={shareMultiplePassword}
                   onChange={(e) => setShareMultiplePassword(e.target.value)}
                 />
               </div>
               <div className="flex gap-3 pt-2">
-                <button 
-                  onClick={handleShareMultiple} 
-                  className="btn-primary flex-1"
-                  disabled={shareMultipleLoading}
-                >
-                  {shareMultipleLoading ? 'Sharing...' : 'Share to All'}
+                <button onClick={handleShareMultiple} className="btn-primary flex-1" disabled={shareMultipleLoading}>
+                  {shareMultipleLoading ? 'Memproses...' : 'Share ke Semua'}
                 </button>
                 <button
                   onClick={() => {
@@ -610,7 +623,7 @@ const Dashboard: React.FC = () => {
                   }}
                   className="btn-secondary flex-1"
                 >
-                  Cancel
+                  Batal
                 </button>
               </div>
             </div>
