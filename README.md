@@ -5,9 +5,9 @@ Sistem manajemen file terenkripsi.
 ## Fitur
 
 - Registrasi + Login
-- Upload/Download file (AES-256-GCM)
+- Upload/Download file 
 - Preview file (teks, gambar, PDF)
-- Share file ke user lain (RSA key wrapping)
+- Share file ke user lain 
 - Share multiple user sekaligus
 - Revoke akses
 - Riwayat aktivitas
@@ -61,7 +61,7 @@ npm start
 CREATE DATABASE securevault_db;
 ```
 
-## Akses Aplikasi
+## Akses 
 
 | Komponen | URL |
 |----------|-----|
