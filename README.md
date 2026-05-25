@@ -69,3 +69,4 @@ CREATE DATABASE securevault_db;
 | API Docs | http://localhost:8000/docs |
 
 ## Video
+[Video Demo SecureVault](https://drive.google.com/file/d/1pP6hYOt4-c1VVXF6PlO096O8yyjnTlE5/view?usp=drivesdk)
