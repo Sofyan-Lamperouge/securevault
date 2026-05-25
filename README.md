@@ -67,3 +67,5 @@ CREATE DATABASE securevault_db;
 |----------|-----|
 | Frontend | http://localhost:3000 |
 | API Docs | http://localhost:8000/docs |
+
+## Video
